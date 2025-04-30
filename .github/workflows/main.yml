@@ -28,9 +28,9 @@ jobs:
 
     - name: Run Flask App
       run: |
-        python run.py > flask.log 2>&1 &
+        python run.py &
         sleep 100
-        cat flask.log
+        # cat flask.log
       #   curl http://localhost:5000
       # continue-on-error: true # Jika curl gagal, workflow tetap jalan
 
