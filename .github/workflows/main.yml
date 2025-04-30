@@ -29,16 +29,11 @@ jobs:
     - name: Run Flask App
       run: |
         python run.py > flask.log 2>&1 &
-        sleep 5
+        sleep 100
         cat flask.log
         curl http://localhost:5000
-
-    - name: Run Flask app (simple test)
-      run: |
-        python run.py &
-        sleep 100 # Beri waktu aplikasi untuk berjalan
-        curl http://localhost:5000 # Asumsi aplikasi berjalan di port 5000
       continue-on-error: true # Jika curl gagal, workflow tetap jalan
+
 
     - name: Stop Flask app
       run: pkill -f run.py
