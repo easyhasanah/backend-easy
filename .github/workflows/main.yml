@@ -2,9 +2,9 @@ name: Python Flask App
 
 on:
   push:
-    branches: [ "main" ] 
+    branches: [ "workflow" ] 
   pull_request:
-    branches: [ "main" ] 
+    branches: [ "workflow" ] 
 
 jobs:
   build:
