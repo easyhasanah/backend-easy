@@ -31,9 +31,9 @@ jobs:
         python run.py > flask.log 2>&1 &
         sleep 100
         cat flask.log
-        curl http://localhost:5000
-      continue-on-error: true # Jika curl gagal, workflow tetap jalan
+      #   curl http://localhost:5000
+      # continue-on-error: true # Jika curl gagal, workflow tetap jalan
 
 
-    - name: Stop Flask app
-      run: pkill -f run.py
+    # - name: Stop Flask app
+    #   run: pkill -f run.py
