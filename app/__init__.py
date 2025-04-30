@@ -2,6 +2,7 @@ from flask import Flask
 from .config import Config
 from .models import db
 from .routes.users import users_bp
+from .routes.submissions import submissions_bp
 from flask_cors import CORS
 
 def create_app():
@@ -15,6 +16,7 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-        app.register_blueprint(users_bp)
+    app.register_blueprint(users_bp)
+    app.register_blueprint(submissions_bp)
 
-        return app
+    return app

@@ -25,7 +25,7 @@ class Submissions(db.Model):
     kategori_rumah = db.Column(db.String(255))
     kategori_pemasukan = db.Column(db.String(255))
     status_keluarga = db.Column(db.String(255))
-    pendidikan_terakhir = db.Column(db.String(255))
+    jumlah_anak = db.Column(db.String(255))
     income = db.Column(db.Integer)
     tnc = db.Column(db.Boolean)
     status_pengajuan = db.Column(db.String(20))
@@ -45,6 +45,8 @@ class HasanahCards(db.Model):
     tanggal_exp = db.Column(db.Date)
     id_user = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     pin = db.Column(db.Integer)
+    jenis_kartu = db.Column(db.String(255))
+    limit_kartu = db.Column(db.Integer)
 
     user = db.relationship('Users', backref='hasanah_cards')
 
