@@ -45,14 +45,14 @@ jobs:
       run: |
         echo "Deploying to production directory..."
         rm -rf /home/kelompok2/backend/* # Hapus isi direktori
-        mkdir -p /home/kelompok2/backend/
-        cp -r . /home/kelompok2/backend/
+        mkdir -p /home/kelompok2/backend1/
+        cp -r . /home/kelompok2/backend1/
 
     - name: Install dependencies (on server)
       run: |
         echo "Installing dependencies on server..."
-        python3 -m venv /home/kelompok2/backend/venv
-        /home/kelompok2/backend/venv/bin/pip install -r /home/kelompok2/backend/requirements.txt
+        python3 -m venv /home/kelompok2/backend1/venv
+        /home/kelompok2/backend1/venv/bin/pip install -r /home/kelompok2/backend/requirements.txt
 
     - name: Stop existing Flask process (if any)
       run: |
@@ -62,7 +62,7 @@ jobs:
     - name: Start Flask app using nohup (on server)
       run: |
         echo "Starting Flask app on server..."
-        nohup /home/kelompok2/backend/venv/bin/python3 /home/kelompok2/backend/run.py > /home/kelompok2/backend/flask.log 2>&1 &
+        nohup /home/kelompok2/backend1/venv/bin/python3 /home/kelompok2/backend/run.py > /home/kelompok2/backend/flask.log 2>&1 &
         echo "Flask app started in the background on /home/kelompok2/backend/"
 
     - name: Run Flask app (in runner - for testing)
@@ -82,4 +82,4 @@ jobs:
       if: failure()
       run: |
         echo "--- Flask Log (last 50 lines from server) ---"
-        tail -n 50 /home/kelompok2/backend/flask.log || true
+        tail -n 50 /home/kelompok2/backend1/flask.log || true
