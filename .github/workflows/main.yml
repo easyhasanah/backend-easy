@@ -84,7 +84,7 @@ jobs:
 
     - name: Start Flask app using nohup (on server)
       run: |
-        echo "Starting Flask app on server (in venv)..."
+        echo "Starting Flask app on server k(in venv)..."
         source /home/kelompok2/backend4/venv/bin/activate
         nohup python /home/kelompok2/backend4/run.py > /home/kelompok2/backend4/flask.log 2>&1 &
         sleep 2
