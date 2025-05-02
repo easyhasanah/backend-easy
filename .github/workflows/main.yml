@@ -11,9 +11,6 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
-    - name: Whoami
-      run: whoami
-
     - name: Checkout source code
       uses: actions/checkout@v4
 
@@ -30,7 +27,46 @@ jobs:
 
     - name: Run Flask app (in runner - for testing)
       run: |
-        echo "Running Flask app in runner (for twesting)..."
+        echo "Running Flask app in runner (for testing)..."
+        python run.py &
+        sleep 5
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000)
+        if [ "$STATUS" -eq 200 ]; then
+          echo "Flask app ran successfully in runner (HTTP 200)"
+        else
+          echo "Failed to run Flask app in runner (HTTP Status: $STATUS)"
+          cat flask.log || true
+          exit 1
+        fi
+        pkill -f run.py
+
+    - name: Deploy to production directory
+      run: |
+        echo "Deploying to production directory..."
+        rm -rf /home/kelompok2/backend/* # Hapus isi direktori
+        mkdir -p /home/kelompok2/backend/
+        cp -r . /home/kelompok2/backend/
+
+    - name: Install dependencies (on server)
+      run: |
+        echo "Installing dependencies on server..."
+        python3 -m venv /home/kelompok2/backend/venv
+        /home/kelompok2/backend/venv/bin/pip install -r /home/kelompok2/backend/requirements.txt
+
+    - name: Stop existing Flask process (if any)
+      run: |
+        echo "Stopping existing Flask process on server (if any)..."
+        pkill -f "python3 /home/kelompok2/backend/run.py" || true
+
+    - name: Start Flask app using nohup (on server)
+      run: |
+        echo "Starting Flask app on server..."
+        nohup /home/kelompok2/backend/venv/bin/python3 /home/kelompok2/backend/run.py > /home/kelompok2/backend/flask.log 2>&1 &
+        echo "Flask app started in the background on /home/kelompok2/backend/"
+
+    - name: Run Flask app (in runner - for testing)
+      run: |
+        echo "Running Flask app in runner (for testing)..."
         python run.py &
         sleep 10
         PROCESS_ID=$(pgrep -f "python run.py")
@@ -42,76 +78,8 @@ jobs:
         fi
         pkill -f run.py
 
-    - name: Deploy to production directory
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}  # Ganti dengan IP atau hostname server Anda
-        username: ${{ secrets.SERVER_USERNAME }}  # Ganti dengan nama pengguna di server Anda
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          echo "Deploying to production directory..."
-          rm -rf /var/www/backend/*
-          mkdir -p /var/www/backend/
-          rsync -avz --delete . /var/www/backend/
-          echo "Deployment complete."
-
-    - name: Install dependencies (on server)
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
-        username: ${{ secrets.SERVER_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          echo "Installing dependencies on server..."
-          python3 -m venv /var/www/backend/venv
-          /var/www/backend/venv/bin/pip install -r /var/www/backend/requirements.txt
-
-    - name: Stop existing Flask process (if any)
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
-        username: ${{ secrets.SERVER_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          echo "Stopping existing Flask process on server (if any)..."
-          pkill -f "python3 /var/www/backend/run.py" || true
-
-    - name: Start Flask app using nohup (on server)
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
-        username: ${{ secrets.SERVER_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          echo "Starting Flask app on server..."
-          nohup /var/www/backend/venv/bin/python3 /var/www/backend/run.py > /var/www/backend/flask.log 2>&1 &
-          echo "Flask app started in the background on /var/www/backend/"
-
-    - name: Wait and check if Flask app is running (on server)
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
-        username: ${{ secrets.SERVER_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          echo "Checking if Flask app is running on server..."
-          sleep 10
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.SERVER_IP_OR_HOSTNAME }}:5000)
-          if [ "$STATUS" -eq 200 ]; then
-            echo "Flask app is running successfully on server (HTTP 200)"
-          else
-            echo "Failed to start Flask app on server (HTTP Status: $STATUS)"
-            cat /var/www/backend/flask.log
-            exit 1
-          fi
-
     - name: Show Flask log (optional)
       if: failure()
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
-        username: ${{ secrets.SERVER_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          echo "--- Flask Log (last 50 lines from server) ---"
-          tail -n 50 /var/www/backend/flask.log || true
+      run: |
+        echo "--- Flask Log (last 50 lines from server) ---"
+        tail -n 50 /home/kelompok2/backend/flask.log || true
