@@ -21,7 +21,7 @@ jobs:
 
     - name: Install dependencies (in runner)
       run: |
-        echo "Installing dependencies in runneer..."
+        echo "Installing dependencies in runner..."
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         whoami
@@ -40,12 +40,24 @@ jobs:
         fi
         pkill -f run.py
 
+    - name: Stop existing Flask process on server
+      run: |
+        echo "Stopping existing Flask process on server (if any)..."
+        kill -9 $(pgrep -f "python3 /home/kelompok2/backend3/run.py") || true
+        sleep 5 # Beri waktu sebentar untuk proses benar-benar berhenti
+
+    - name: Adjust directory permissions
+      run: |
+        echo "Adjusting permissions for /home/kelompok2/backend3/..."
+        ls -ld /home/kelompok2/backend3/
+        chown -R kelompok2:kelompok2 /home/kelompok2/backend3/
+        chmod -R 755 /home/kelompok2/backend3/
 
     - name: Deploy to production directory
       run: |
         echo "Deploying to production directory..."
-        rm -rf /home/kelompok2/backend3/* # Hapus isi direktori
-        sleep 10
+        rm -rf /home/kelompok2/backend3/*
+        sleep 5
         cp -r . /home/kelompok2/backend3/
 
     - name: Install dependencies (on server)
@@ -53,11 +65,6 @@ jobs:
         echo "Installing dependencies on server..."
         python3 -m venv /home/kelompok2/backend3/venv
         /home/kelompok2/backend3/venv/bin/pip install -r /home/kelompok2/backend3/requirements.txt
-
-    - name: Stop existing Flask process (if any)
-      run: |
-        echo "Stopping existing Flask process on server (if any)..."
-        pkill -f "python3 /home/kelompok2/backend3/run.py" || true
 
     - name: Start Flask app using nohup (on server)
       run: |
@@ -77,7 +84,6 @@ jobs:
           exit 1
         fi
 
-        
     - name: Show Flask log (optional)
       if: failure()
       run: |
