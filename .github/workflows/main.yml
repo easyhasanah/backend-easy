@@ -54,19 +54,18 @@ jobs:
         sleep 2
         cp -r . /home/kelompok2/backend4/
 
-    - name: Attempt to install dependencies using apt (with manual mapping)
+    - name: Set up and install dependencies on server using virtual environment
       run: |
-       echo "Attempting to install dependencies using apt..."
-       while IFS= read -r package; do
-       echo "Attempting to install python3-$package..."
-       sudo apt install -y "python3-$package"
-       if [ $? -eq 0 ]; then
-         echo "Successfully installed python3-$package"
-       else
-         echo "Warning: Failed to install python3-$package. Please check if a corresponding apt package exists."
-       fi
-       done < /home/kelompok2/backend4/requirements.txt
-       echo "Installation attempt completed. Please review warnings for potential missing packages."
+       echo "Setting up virtual environment..."
+       python3 -m venv /home/kelompok2/backend4/venv
+
+       echo "Activating virtual environment..."
+       source /home/kelompok2/backend4/venv/bin/activate
+
+       echo "Installing dependencies from requirements.txt..."
+       pip install -r /home/kelompok2/backend4/requirements.txt
+
+       echo "Completed"
 
     - name: Start Flask app using nohup (on server)
       run: |
