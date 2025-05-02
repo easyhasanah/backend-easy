@@ -30,7 +30,7 @@ jobs:
 
     - name: Run Flask app (in runner - for testing)
       run: |
-        echo "Running Flask app in runner (for testing)..."
+        echo "Running Flask app in runner (for twesting)..."
         python run.py &
         sleep 10
         PROCESS_ID=$(pgrep -f "python run.py")
