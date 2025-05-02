@@ -31,6 +31,7 @@ jobs:
         echo "Running Flask app in runner (for testing)..."
         python run.py &
         sleep 10
+        curl http://192.168.23.50:5000
         PROCESS_ID=$(pgrep -f "python run.py")
         if [ -n "$PROCESS_ID" ]; then
           echo "Flask app process is running (PID: $PROCESS_ID)"
