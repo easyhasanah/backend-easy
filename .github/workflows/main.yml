@@ -69,8 +69,9 @@ jobs:
 
     - name: Start Flask app using nohup (on server)
       run: |
+        chmod +x /home/kelompok2/run_app.sh
         echo "Starting Flask app on serverc ..."
-        nohup /home/kelompok2/run_app.sh 
+        nohup /home/kelompok2/run_app.sh &
         
         curl http://192.168.23.50:5000 || true
         echo "Flask app started in the background on /home/kelompok2/backend4/"
