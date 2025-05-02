@@ -43,7 +43,7 @@ jobs:
     - name: Deploy to production directory
       run: |
         echo "Deploying to production directory..."
-        sudo rm -rf /var/www/backend/* # Hapus isi direktori (hati-hati!)
+       
         echo "Remove success"
         sudo mkdir -p /var/www/backend/
         sudo cp -r . /var/www/backend/
