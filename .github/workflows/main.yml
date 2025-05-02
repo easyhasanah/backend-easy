@@ -19,7 +19,7 @@ jobs:
       with:
         python-version: "3.x"
 
-    - name: Install dependencies (di runner)
+    - name: Install dependencies (di runner - untuk keperluan workflow)
       run: |
         echo "Installing dependencies in runner..."
         python -m pip install --upgrade pip
@@ -57,20 +57,22 @@ jobs:
     - name: Set up and install dependencies on server
       run: |
         echo "Setting up and installing dependencies on server (in venv)..."
-        # Periksa apakah venv sudah ada, jika tidak, buat
-        if [ ! -d "/home/kelompok2/backend3/venv" ]; then
-          echo "Creating virtual environment..."
-          python3 -m venv /home/kelompok2/backend3/venv
-          if [ -d "/home/kelompok2/backend3/venv/bin" ]; then
-            echo "Virtual environment created successfully."
-            ls -la /home/kelompok2/backend3/venv/bin/activate
-          else
-            echo "Error creating virtual environment."
-            exit 1
-          fi
-        else
-          echo "Virtual environment already exists."
+        # Hapus direktori venv jika ada
+        if [ -d "/home/kelompok2/backend3/venv" ]; then
+          echo "Deleting existing virtual environment..."
+          rm -rf /home/kelompok2/backend3/venv
+        fi
+
+        # Buat virtual environment
+        echo "Creating virtual environment..."
+        python3 -m venv /home/kelompok2/backend3/venv
+        if [ -d "/home/kelompok2/backend3/venv/bin/activate" ]; then
+          echo "Virtual environment created successfully."
           ls -la /home/kelompok2/backend3/venv/bin/activate
+        else
+          echo "Error creating virtual environment - activate file not found."
+          ls -la /home/kelompok2/backend3/venv/bin
+          exit 1
         fi
 
         # Aktifkan dan instal dependensi
