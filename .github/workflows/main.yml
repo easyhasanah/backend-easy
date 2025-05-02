@@ -67,14 +67,12 @@ jobs:
 
        echo "Completed"
 
-    - name: Start Flask app using nohup (on server)
+    - name: Restart Flask service
       run: |
-        chmod +x /home/kelompok2/run_app.sh
-        echo "Starting Flask app on serverc ..."
-        setsid /home/kelompok2/run_app.sh >/dev/null 2>&1 < /dev/null &
-        
-        curl http://192.168.23.50:5000 || true
-        echo "Flask app started in the background on /home/kelompok2/backend4/"
+       systemctl restart flaskapp
+       sleep 2
+       curl http://192.168.23.50:5000 || true
+
 
     - name: Show Flask log (optional - jika ada kegagalan)
       if: failure()
