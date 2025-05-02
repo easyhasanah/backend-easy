@@ -1,104 +1,117 @@
-import pickle
-from flask import Blueprint, jsonify, request
-import pandas as pd
-from app.models import db, Submissions
-import numpy as np
 import joblib
+from flask import Blueprint, jsonify, request
+import numpy as np
+import pandas as pd
 
 submissions_bp = Blueprint('submissions', __name__, url_prefix='/api/submissions')
 
-model = 'models/best_model_approval.pkl'
-with open(model, 'rb') as file:
-    model = pickle.load(file)
+# Paths to saved artifacts
+APPROVAL_MODEL_PATH = 'models/best_model_approval.pkl'
+APPROVAL_SCALER_PATH = 'models/scaler_approval.pkl'
+CATEGORY_MODEL_PATH = 'models/best_model_credit.pkl'
+CATEGORY_SCALER_PATH = 'models/scaler_credit.pkl'
+
+# Load artifacts
+approval_model = joblib.load(APPROVAL_MODEL_PATH)
+approval_scaler = joblib.load(APPROVAL_SCALER_PATH)
+category_model = joblib.load(CATEGORY_MODEL_PATH)
+category_scaler = joblib.load(CATEGORY_SCALER_PATH)
+
+# Feature columns for raw input
+COLUMNS = [
+    'total_children',
+    'total_income',
+    'applicant_age',
+    'years_of_working',
+    'total_bad_debt',
+    'total_good_debt',
+    'income_type_commercial_associate',
+    'income_type_pensioner',
+    'income_type_state_servant',
+    'income_type_student',
+    'income_type_working',
+    'family_status_married',
+    'family_status_separated',
+    'family_status_single',
+    'family_status_widow',
+    'housing_type_co_op_apartment',
+    'housing_type_house_apartment',
+    'housing_type_municipal_apartment',
+    'housing_type_office_apartment',
+    'housing_type_rented_apartment',
+    'housing_type_with_parents',
+]
+# Derive expected column order for category scaler
+CAT_FEATURES = list(category_scaler.feature_names_in_)
+
+
+def build_input_df(data):
+    """
+    Validate input, apply log-transform, and return DataFrame of raw features.
+    """
+    values = {}
+    for col in COLUMNS:
+        if col not in data:
+            raise KeyError(col)
+        try:
+            values[col] = float(data[col])
+        except ValueError:
+            raise ValueError(f"Invalid numeric value for {col}")
+
+    # Log-transform numeric skewed features
+    for col in ['years_of_working', 'total_bad_debt']:
+        values[col] = np.log(values[col] + 1)
+
+    return pd.DataFrame([values], columns=COLUMNS)
+
 
 @submissions_bp.route('/predict', methods=['POST'])
 def predict():
-    feature_input = request.get_json()
+    payload = request.get_json() or {}
+    try:
+        raw_df = build_input_df(payload)
+    except KeyError as e:
+        return jsonify({'error': f"Missing field: {e.args[0]}"}), 400
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
 
-    total_children = float(feature_input['total_children'])
-    total_income = float(feature_input['total_income'])
-    total_family_members = float(feature_input['total_family_members'])
-    applicant_age = float(feature_input['applicant_age'])
-    years_of_working = float(feature_input['years_of_working'])
-    total_bad_debt = float(feature_input['total_bad_debt'])
-    total_good_debt = float(feature_input['total_good_debt'])
+    # Scale + predict approval
+    X_scaled = approval_scaler.transform(raw_df)
+    pred = approval_model.predict(X_scaled)[0]
+    status = 'DISETUJUI' if pred == 1 else 'DITOLAK'
 
-    income_type_commercial_associate = float(feature_input['income_type_commercial_associate'])
-    income_type_pensioner = float(feature_input['income_type_pensioner'])
-    income_type_state_servant = float(feature_input['income_type_state_servant'])
-    income_type_student = float(feature_input['income_type_student'])
-    income_type_working = float(feature_input['income_type_working'])
+    result = payload.copy()
+    result['status_pengajuan'] = status
+    return jsonify(result), 201
 
-    family_status_married = float(feature_input['family_status_married'])
-    family_status_separated = float(feature_input['family_status_separated'])
-    family_status_single = float(feature_input['family_status_single'])
-    family_status_widow = float(feature_input['family_status_widow'])
 
-    housing_type_co_op_apartment = float(feature_input['housing_type_co_op_apartment'])
-    housing_type_house_apartment = float(feature_input['housing_type_house_apartment'])
-    housing_type_municipal_apartment = float(feature_input['housing_type_municipal_apartment'])
-    housing_type_office_apartment = float(feature_input['housing_type_office_apartment'])
-    housing_type_rented_apartment = float(feature_input['housing_type_rented_apartment'])
-    housing_type_with_parents = float(feature_input['housing_type_with_parents'])
+@submissions_bp.route('/predict_category', methods=['POST'])
+def predict_category():
+    payload = request.get_json() or {}
+    try:
+        raw_df = build_input_df(payload)
+    except KeyError as e:
+        return jsonify({'error': f"Missing field: {e.args[0]}"}), 400
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
 
-    # features = {
-    #                 'total_children': total_children,
-    #                 'total_income': total_income,
-    #                 'income_type_commercial_associate': income_type_commercial,
-    #                 'income_type_pensioner': income_type_pensioner,
-    #                 'income_type_state_servant': income_type_state_servant,
-    #                 'income_type_student': income_type_student,
-    #                 'income_type_working': income_type_working,
-    #                 'family_status_married': family_status_married,
-    #                 'family_status_separated': family_status_separated,
-    #                 'family_status_single': family_status_single,
-    #                 'family_status_widow': family_status_widow,
-    #                 'housing_type_co_op_apartment': housing_type_co_op_apartment,
-    #                 'housing_type_house_apartment': housing_type_house,
-    #                 'housing_type_municipal_apartment': housing_type_municipal,
-    #                 'housing_type_office_apartment': housing_type_office,
-    #                 'housing_type_rented_apartment': housing_type_rented,
-    #                 'housing_type_with_parents': housing_type_with_parents
-    #             } 
-       
-    
-    features = [
-        total_children,
-        total_income,
-        total_family_members,
-        applicant_age,
-        years_of_working,
-        total_bad_debt,
-        total_good_debt,
+    # Step 1: approval
+    X_app = approval_scaler.transform(raw_df)
+    app_pred = approval_model.predict(X_app)[0]
+    status_num = int(app_pred)
+    status = 'DISETUJUI' if app_pred == 1 else 'DITOLAK'
 
-        income_type_commercial_associate,
-        income_type_pensioner,
-        income_type_state_servant,
-        income_type_student,
-        income_type_working,
+    # Step 2: prepare features for category (include status)
+    cat_df = raw_df.copy()
+    cat_df['status'] = status_num
+    # Reorder to match scaler's expected feature names exactly
+    cat_df = cat_df[CAT_FEATURES]
 
-        family_status_married,
-        family_status_separated,
-        family_status_single,
-        family_status_widow,
+    # Scale + predict category
+    X_cat_scaled = category_scaler.transform(cat_df)
+    cat_pred = category_model.predict(X_cat_scaled)[0]
 
-        housing_type_co_op_apartment,
-        housing_type_house_apartment,
-        housing_type_municipal_apartment,
-        housing_type_office_apartment,
-        housing_type_rented_apartment,
-        housing_type_with_parents
-    ]
-
-    
-    # features_transform = np.log1p(features_df['total_income'])
-    # prediction = model.predict({"Total_Children":0,"Total_Income":10.8197982842,"Income_Type_Commercial_Associate":1.0,"Income_Type_Pensioner":0.0,"Income_Type_State_Servant":0.0,"Income_Type_Student":0.0,"Income_Type_Working":0.0,"Family_Status_Civil_Marriage":1.0,"Family_Status_Married":1.0,"Family_Status_Separated":0.0,"Family_Status_Single_Or_Not_Married":0.0,"Family_Status_Widow":0.0,"Housing_Type_Co_op_Apartment":0.0,"Housing_Type_House_Or_Apartment":1.0,"Housing_Type_Municipal_Apartment":0.0,"Housing_Type_Office_Apartment":0.0,"Housing_Type_Rented_Apartment":0.0,"Housing_Type_With_Parents":0.0})
-    prediction = model.predict([features])
-    status_pengajuan = "DISETUJUI" if prediction[0] == 1 else "DITOLAK"
-
-    result_predict = [{"status_pengajuan": status_pengajuan}]
-
-    data = [feature_input] + result_predict
-    merged = {**data[0], **data[1]}
-
-    return jsonify(merged), 201
+    result = payload.copy()
+    result['status_pengajuan'] = status
+    result['credit_card_category'] = int(cat_pred)
+    return jsonify(result), 201
