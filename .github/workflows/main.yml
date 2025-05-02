@@ -11,6 +11,14 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
+    - name: Execute remote SSH commands using password
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        password: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+
     - name: Whoami
       run: whoami
       
