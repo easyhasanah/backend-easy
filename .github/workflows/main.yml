@@ -77,7 +77,7 @@ jobs:
           exit 1
         fi
         pkill -f run.py
-
+        
     - name: Show Flask log (optional)
       if: failure()
       run: |
