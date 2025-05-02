@@ -64,14 +64,14 @@ jobs:
     - name: Install dependencies (on server)
       run: |
         echo "Installing dependencies on server..."
-        python3 -m venv /home/kelompok2/backend3/venv
-        /home/kelompok2/backend3/venv/bin/pip install -r /home/kelompok2/backend3/requirements.txt
+        # python3 -m venv /home/kelompok2/backend3/venv
+        pip install -r /home/kelompok2/backend3/requirements.txt
 
     - name: Start Flask app using nohup (on server)
       run: |
         source /home/kelompok2/backend3/venv/bin/activate
         echo "Starting Flask app on server..."
-        nohup /home/kelompok2/backend3/venv/bin/python /home/kelompok2/backend3/run.py > /home/kelompok2/backend3/flask.log 2>&1 &
+        nohup python /home/kelompok2/backend3/run.py > /home/kelompok2/backend3/flask.log 2>&1 &
         curl http://192.168.23.50:5000
         echo "Flask app started in the background on /home/kelompok2/backend3/"
 
