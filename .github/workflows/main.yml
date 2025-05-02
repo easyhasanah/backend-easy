@@ -52,18 +52,18 @@ jobs:
       run: |
         echo "Installing dependencies on server..."
         python3 -m venv /home/kelompok2/backend1/venv
-        /home/kelompok2/backend1/venv/bin/pip install -r /home/kelompok2/backend/requirements.txt
+        /home/kelompok2/backend1/venv/bin/pip install -r /home/kelompok2/backend1/requirements.txt
 
     - name: Stop existing Flask process (if any)
       run: |
         echo "Stopping existing Flask process on server (if any)..."
-        pkill -f "python3 /home/kelompok2/backend/run.py" || true
+        pkill -f "python3 /home/kelompok2/backend1/run.py" || true
 
     - name: Start Flask app using nohup (on server)
       run: |
         echo "Starting Flask app on server..."
-        nohup /home/kelompok2/backend1/venv/bin/python3 /home/kelompok2/backend/run.py > /home/kelompok2/backend/flask.log 2>&1 &
-        echo "Flask app started in the background on /home/kelompok2/backend/"
+        nohup /home/kelompok2/backend1/venv/bin/python3 /home/kelompok2/backend1/run.py > /home/kelompok2/backend/flask.log 2>&1 &
+        echo "Flask app started in the background on /home/kelompok2/backend1/"
 
     - name: Run Flask app (in runner - for testing)
       run: |
