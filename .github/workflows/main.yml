@@ -28,7 +28,7 @@ jobs:
 
     - name: Run Flask app (di runner - untuk testing sederhana)
       run: |
-        echo "Running Flask app in runner (for basic testing)..."
+        echo "Running Flask app in runner (for basic testing).,.."
         python run.py &
         sleep 5
         curl http://192.168.23.50:5000 || true
