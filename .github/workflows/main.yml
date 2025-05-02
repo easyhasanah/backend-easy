@@ -38,45 +38,77 @@ jobs:
           exit 1
         fi
         pkill -f run.py
+
     - name: Deploy to production directory
-      run: |
-        echo "Deploying to production directory..."
-        sudo rm -rf /var/www/backend/* # Hapus isi direktori (hati-hati!)
-        sudo mkdir -p /var/www/backend/
-        sudo cp -r . /var/www/backend/
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}  # Ganti dengan IP atau hostname server Anda
+        username: ${{ secrets.SERVER_USERNAME }}  # Ganti dengan nama pengguna di server Anda
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          echo "Deploying to production directory..."
+          rm -rf /var/www/backend/*
+          mkdir -p /var/www/backend/
+          rsync -avz --delete . /var/www/backend/
+          echo "Deployment complete."
 
     - name: Install dependencies (on server)
-      run: |
-        echo "Installing dependencies on server..."
-        sudo python3 -m venv /var/www/backend/venv
-        sudo /var/www/backend/venv/bin/pip install -r /var/www/backend/requirements.txt
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          echo "Installing dependencies on server..."
+          python3 -m venv /var/www/backend/venv
+          /var/www/backend/venv/bin/pip install -r /var/www/backend/requirements.txt
 
     - name: Stop existing Flask process (if any)
-      run: |
-        echo "Stopping existing Flask process on server (if any)..."
-        sudo pkill -f "python3 /var/www/backend/run.py" || true
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          echo "Stopping existing Flask process on server (if any)..."
+          pkill -f "python3 /var/www/backend/run.py" || true
 
     - name: Start Flask app using nohup (on server)
-      run: |
-        echo "Starting Flask app on server..."
-        sudo nohup /var/www/backend/venv/bin/python3 /var/www/backend/run.py > /var/www/backend/flask.log 2>&1 &
-        echo "Flask app started in the background on /var/www/backend/"
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          echo "Starting Flask app on server..."
+          nohup /var/www/backend/venv/bin/python3 /var/www/backend/run.py > /var/www/backend/flask.log 2>&1 &
+          echo "Flask app started in the background on /var/www/backend/"
 
     - name: Wait and check if Flask app is running (on server)
-      run: |
-        echo "Checking if Flask app is running on server..."
-        sleep 10
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://192.168.23.50:5000)
-        if [ "$STATUS" -eq 200 ]; then
-          echo "Flask app is running successfully on server (HTTP 200)"
-        else
-          echo "Failed to start Flask app on server (HTTP Status: $STATUS)"
-          sudo cat /var/www/backend/flask.log
-          exit 1
-        fi
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          echo "Checking if Flask app is running on server..."
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.SERVER_IP_OR_HOSTNAME }}:5000)
+          if [ "$STATUS" -eq 200 ]; then
+            echo "Flask app is running successfully on server (HTTP 200)"
+          else
+            echo "Failed to start Flask app on server (HTTP Status: $STATUS)"
+            cat /var/www/backend/flask.log
+            exit 1
+          fi
 
     - name: Show Flask log (optional)
       if: failure()
-      run: |
-        echo "--- Flask Log (last 50 lines from server) ---"
-        sudo tail -n 50 /var/www/backend/flask.log || true
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_IP_OR_HOSTNAME }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          echo "--- Flask Log (last 50 lines from server) ---"
+          tail -n 50 /var/www/backend/flask.log || true
