@@ -72,17 +72,7 @@ jobs:
         nohup /home/kelompok2/backend3/venv/bin/python3 /home/kelompok2/backend3/run.py > /home/kelompok2/backend3/flask.log 2>&1 &
         echo "Flask app started in the background on /home/kelompok2/backend3/"
 
-    - name: Run Flask app (in runner - for testing)
-      run: |
-        echo "Running Flask app in runner (for testing)..."
-        python run.py &
-        PROCESS_ID=$(pgrep -f "python run.py")
-        if [ -n "$PROCESS_ID" ]; then
-          echo "Flask app process is running (PID: $PROCESS_ID)"
-        else
-          echo "Flask app process is not running"
-          exit 1
-        fi
+   
 
     - name: Show Flask log (optional)
       if: failure()
