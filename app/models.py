@@ -9,7 +9,7 @@ class Users(db.Model):
     username = db.Column(db.String(255), nullable=False)
     password = db.Column(db.String(255), nullable=False)
     nik = db.Column(db.Integer, nullable=False)
-    nama_lengkap = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
 
     def to_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -20,17 +20,26 @@ class Submissions(db.Model):
     __tablename__ = 'submissions'
 
     id = db.Column(db.Integer, primary_key=True)
-    id_user = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     file_bpp = db.Column(db.String(255))
-    kategori_rumah = db.Column(db.String(255))
-    kategori_pemasukan = db.Column(db.String(255))
-    status_keluarga = db.Column(db.String(255))
-    jumlah_anak = db.Column(db.String(255))
+    house_category_id = db.Column(db.Integer, db.ForeignKey('house_category.id'), nullable=False)
+    income_category_id = db.Column(db.Integer, db.ForeignKey('income_category.id'), nullable=False)
+    family_status_id = db.Column(db.Integer, db.ForeignKey('family_status.id'), nullable=False)
+    total_children = db.Column(db.Integer)
     income = db.Column(db.Integer)
     tnc = db.Column(db.Boolean)
     status_pengajuan = db.Column(db.String(20))
+    total_bad_debt = db.Column(db.Integer)
+    total_good_debt = db.Column(db.Integer)
+    years_of_working = db.Column(db.Integer)
+    applicant_age = db.Column(db.Integer)
+    credit_card_category_id = db.Column(db.Integer, db.ForeignKey('card_category.id'), nullable=False)
 
     user = db.relationship('Users', backref='submissions')
+    HouseCategory = db.relationship('HouseCategory', backref='house_category')
+    IncomeCategory = db.relationship('IncomeCategory', backref='income_category')
+    FamilyStatus = db.relationship('FamilyStatus', backref='family_status')
+    CardCategory = db.relationship('CardCategory', backref='card_category')
 
     def to_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -38,7 +47,7 @@ class Submissions(db.Model):
     
 
 class HasanahCards(db.Model):
-    __tablename__ = 'hasanahcards'
+    __tablename__ = 'hasanah_cards'
 
     id = db.Column(db.Integer, primary_key=True)
     nomor_hasanah = db.Column(db.Integer)
@@ -53,26 +62,26 @@ class HasanahCards(db.Model):
     def to_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
-class Rumah(db.Model):
-    __tablename__ = 'rumah'
+class HouseCategory(db.Model):
+    __tablename__ = 'house_category'
 
     id = db.Column(db.Integer, primary_key=True)
-    nama_kategori_rumah = db.Column(db.String(255), nullable=False)
+    house_category_desc = db.Column(db.String(255), nullable=False)
 
-class Pemasukan(db.Model):
-    __tablename__ = 'pemasukan'
-
-    id = db.Column(db.Integer, primary_key=True)
-    nama_kategori_pemasukan = db.Column(db.String(255), nullable=False)
-
-class Keluarga(db.Model):
-    __tablename__ = 'keluarga'
+class IncomeCategory(db.Model):
+    __tablename__ = 'income_category'
 
     id = db.Column(db.Integer, primary_key=True)
-    nama_status_keluarga = db.Column(db.String(255), nullable=False)
+    income_category_desc = db.Column(db.String(255), nullable=False)
 
-class Pendidikan(db.Model):
-    __tablename__ = 'pendidikan'
+class FamilyStatus(db.Model):
+    __tablename__ = 'family_status'
 
     id = db.Column(db.Integer, primary_key=True)
-    nama_pendidikan = db.Column(db.String(255), nullable=False)
+    family_status_desc = db.Column(db.String(255), nullable=False)
+
+class CardCategory(db.Model):
+    __tablename__ = 'card_category'
+
+    id = db.Column(db.Integer, primary_key=True)
+    card_category_desc = db.Column(db.String(255), nullable=False)

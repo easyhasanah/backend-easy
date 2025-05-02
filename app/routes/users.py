@@ -3,8 +3,14 @@ from app.models import db, Users
 import jwt
 import datetime
 from app.services.jwt import token_required
+import bcrypt
 
 users_bp = Blueprint('users', __name__, url_prefix='/api/users')
+
+
+@users_bp.route('/test', methods=['GET'])
+def test_api():
+    return jsonify({'message': 'success'}), 200
 
 @users_bp.route('/', methods=['GET'])
 @token_required
@@ -21,9 +27,9 @@ def login():
 
     users = Users.query.filter_by(username=username).first()
     if not users:
-        return jsonify({'message': 'username tidak ditemukan'}), 401
+        return jsonify({'message': 'username atau password salah'}), 401
 
-    if (username == users.username and password == users.password):
+    if bcrypt.checkpw(password.encode('utf-8'), users.password.encode('utf-8')):
         token = jwt.encode({
             'username': username,
             'userId': users.id,
@@ -36,7 +42,3 @@ def login():
             }), 200
     else:
         return jsonify({'message': 'username atau password salah'}), 401
-        
-
-
-
