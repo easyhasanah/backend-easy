@@ -28,18 +28,17 @@ jobs:
     - name: Run Flask app (in runner - for testing)
       run: |
         echo "Running Flask app in runner (for testing)..."
-        python run.py &  # Jalankan di background untuk tidak memblokir langkah selanjutnya
-        sleep 5         # Beri waktu sebentar untuk aplikasi dimulai
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000)
+        python run.py &
+        sleep 10 # Tambah waktu tunggu
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000/)
         if [ "$STATUS" -eq 200 ]; then
           echo "Flask app ran successfully in runner (HTTP 200)"
         else
           echo "Failed to run Flask app in runner (HTTP Status: $STATUS)"
-          cat flask.log || true
+          # cat flask.log || true # Hapus atau komentari baris ini jika file log tidak diharapkan ada
           exit 1
         fi
-        pkill -f run.py # Hentikan proses Flask di runner
-
+        pkill -f run.py
     - name: Deploy to production directory
       run: |
         echo "Deploying to production directory..."
