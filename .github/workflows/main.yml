@@ -71,6 +71,7 @@ jobs:
       run: |
         echo "Starting Flask app on server..."
         nohup /home/kelompok2/backend3/venv/bin/python3 /home/kelompok2/backend3/run.py > /home/kelompok2/backend3/flask.log 2>&1 &
+        curl http://192.168.23.50:5000
         echo "Flask app started in the background on /home/kelompok2/backend3/"
 
    
