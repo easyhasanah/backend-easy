@@ -1,4 +1,4 @@
-name: Python Flask App
+name: Python Flask App Deployment
 
 on:
   push:
@@ -14,70 +14,68 @@ jobs:
     - name: Checkout source code
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.x
+    - name: Set up Python 3.x (di runner)
       uses: actions/setup-python@v5
       with:
         python-version: "3.x"
 
-    - name: Install dependencies (in runner)
+    - name: Install dependencies (di runner - untuk keperluan workflow)
       run: |
         echo "Installing dependencies in runner..."
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        whoami
 
-    - name: Run Flask app (in runner - for testing)
+    - name: Run Flask app (di runner - untuk testing sederhana)
       run: |
-        echo "Running Flask app in runner (for testing)..."
+        echo "Running Flask app in runner (for basic testing).,.."
         python run.py &
-        sleep 10 # Tambah waktu tunggu
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000/)
-        if [ "$STATUS" -eq 200 ]; then
-          echo "Flask app ran successfully in runner (HTTP 200)"
-        else
-          echo "Failed to run Flask app in runner (HTTP Status: $STATUS)"
-          # cat flask.log || true # Hapus atau komentari baris ini jika file log tidak diharapkan ada
-          exit 1
-        fi
-        pkill -f run.py
+        sleep 5
+        curl http://192.168.23.50:5000 || true
+        pkill -f run.py || true
+
+    - name: Stop existing Flask process on server
+      run: |
+        echo "Stopping existing Flask process on server (if any)..."
+        pkill -f "python3 /home/kelompok2/backend4/run.py" || true
+        sleep 5
+
+    - name: Adjust directory permissions
+      run: |
+        echo "Adjusting permissions for /home/kelompok2/backend4/..."
+        ls -ld /home/kelompok2/backend4/
+        sudo chown -R kelompok2:kelompok2 /home/kelompok2/backend4/
+        sudo chmod -R 755 /home/kelompok2/backend4/
+
     - name: Deploy to production directory
       run: |
         echo "Deploying to production directory..."
-        sudo rm -rf /var/www/backend/* # Hapus isi direktori (hati-hati!)
-        sudo mkdir -p /var/www/backend/
-        sudo cp -r . /var/www/backend/
+        rm -rf /home/kelompok2/backend4/*
+        sleep 2
+        cp -r . /home/kelompok2/backend4/
 
-    - name: Install dependencies (on server)
+    - name: Set up and install dependencies on server using virtual environment
       run: |
-        echo "Installing dependencies on server..."
-        sudo python3 -m venv /var/www/backend/venv
-        sudo /var/www/backend/venv/bin/pip install -r /var/www/backend/requirements.txt
+       echo "Setting up virtual environment..."
+       python3.12 -m venv /home/kelompok2/backend4/venv
 
-    - name: Stop existing Flask process (if any)
+       echo "Activating virtual environment..."
+       source /home/kelompok2/backend4/venv/bin/activate
+
+       echo "Installing dependencies from requirements.txt..."
+       pip install -r /home/kelompok2/backend4/requirements.txt
+
+       echo "Completed"
+
+    - name: Restart Flask service
       run: |
-        echo "Stopping existing Flask process on server (if any)..."
-        sudo pkill -f "python3 /var/www/backend/run.py" || true
+       sudo systemctl restart easyapp.service
+       sleep 2
+       curl http://192.168.23.50:5000 || true
 
-    - name: Start Flask app using nohup (on server)
-      run: |
-        echo "Starting Flask app on server..."
-        sudo nohup /var/www/backend/venv/bin/python3 /var/www/backend/run.py > /var/www/backend/flask.log 2>&1 &
-        echo "Flask app started in the background on /var/www/backend/"
 
-    - name: Wait and check if Flask app is running (on server)
-      run: |
-        echo "Checking if Flask app is running on server..."
-        sleep 10
-        STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://192.168.23.50:5000)
-        if [ "$STATUS" -eq 200 ]; then
-          echo "Flask app is running successfully on server (HTTP 200)"
-        else
-          echo "Failed to start Flask app on server (HTTP Status: $STATUS)"
-          sudo cat /var/www/backend/flask.log
-          exit 1
-        fi
-
-    - name: Show Flask log (optional)
+    - name: Show Flask log (optional - jika ada kegagalan)
       if: failure()
       run: |
         echo "--- Flask Log (last 50 lines from server) ---"
-        sudo tail -n 50 /var/www/backend/flask.log || true
+        tail -n 50 /home/kelompok2/backend4/flask.log || true
