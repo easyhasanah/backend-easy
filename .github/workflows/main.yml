@@ -1,4 +1,4 @@
-name: Python Flask App
+  name: Python Flask App
 
 on:
   push:
@@ -46,8 +46,6 @@ jobs:
         echo "Deploying to production directory..."
         rm -rf /home/kelompok2/backend11/* # Hapus isi direktori
         sleep 10
-        mkdir -p /home/kelompok2/backend11/
-        sleep 5
         cp -r . /home/kelompok2/backend11/
 
     - name: Install dependencies (on server)
@@ -70,7 +68,7 @@ jobs:
     - name: Run Flask app (in runner - for testing)
       run: |
         echo "Running Flask app in runner (for testing)..."
-        
+        python run.py &
         PROCESS_ID=$(pgrep -f "python run.py")
         if [ -n "$PROCESS_ID" ]; then
           echo "Flask app process is running (PID: $PROCESS_ID)"
