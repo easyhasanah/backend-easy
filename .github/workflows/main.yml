@@ -56,37 +56,14 @@ jobs:
 
     - name: Set up and install dependencies on server
       run: |
-        echo "Setting up and installing dependencies on server (in venv)..."
-        # Hapus direktori venv jika ada
-        if [ -d "/home/kelompok2/backend4/venv" ]; then
-          echo "Deleting existing virtual environment..."
-          rm -rf /home/kelompok2/backend4/venv
-        fi
-
-        # Buat virtual environment
-        echo "Creating virtual environment..."
-        python3 -m venv /home/kelompok2/backend4/venv
-        if [ -d "/home/kelompok2/backend4/venv/bin/activate" ]; then
-          echo "Virtual environment created successfully."
-          ls -la /home/kelompok2/backend4/venv/bin/activate
-        else
-          echo "Error creating virtual environment - activate file not found."
-          ls -la /home/kelompok2/backend4/venv/bin
-          exit 1
-        fi
-
-        # Aktifkan dan instal dependensi
-        echo "Activating virtual environment..."
-        source /home/kelompok2/backend4/venv/bin/activate
-        echo "Installing dependencies..."
-        pip install --upgrade pip
-        pip install -r /home/kelompok2/backend4/requirements.txt
+        echo "Installing dependencies on server..."
+        cat /home/kelompok2/backend4/requirements.txt | xargs sudo apt install python3-
+        echo "Completed"
 
     - name: Start Flask app using nohup (on server)
       run: |
-        echo "Starting Flask app on server k(in venv)..."
-        source /home/kelompok2/backend4/venv/bin/activate
-        nohup python /home/kelompok2/backend4/run.py > /home/kelompok2/backend4/flask.log 2>&1 &
+        echo "Starting Flask app on server ..."
+        nohup python3 /home/kelompok2/backend4/run.py > /home/kelompok2/backend4/flask.log 2>&1 &
         sleep 2
         curl http://192.168.23.50:5000 || true
         echo "Flask app started in the background on /home/kelompok2/backend4/"
