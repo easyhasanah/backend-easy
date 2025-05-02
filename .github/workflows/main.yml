@@ -57,7 +57,7 @@ jobs:
     - name: Set up and install dependencies on server using virtual environment
       run: |
        echo "Setting up virtual environment..."
-       python3 -m venv /home/kelompok2/backend4/venv
+       python3.10 -m venv /home/kelompok2/backend4/venv
 
        echo "Activating virtual environment..."
        source /home/kelompok2/backend4/venv/bin/activate
