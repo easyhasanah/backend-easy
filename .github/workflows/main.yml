@@ -44,8 +44,10 @@ jobs:
     - name: Deploy to production directory
       run: |
         echo "Deploying to production directory..."
-        rm -rf /home/kelompok2/backend/* # Hapus isi direktori
+        rm -rf /home/kelompok2/backend1/* # Hapus isi direktori
+        sleep 10
         mkdir -p /home/kelompok2/backend1/
+        sleep 5
         cp -r . /home/kelompok2/backend1/
 
     - name: Install dependencies (on server)
