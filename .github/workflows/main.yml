@@ -65,7 +65,7 @@ jobs:
       run: |
         echo "Installing dependencies on server..."
         # python3 -m venv /home/kelompok2/backend3/venv
-        pip install -r /home/kelompok2/backend3/requirements.txt
+        /bin/pip install -r /home/kelompok2/backend3/requirements.txt
 
     - name: Start Flask app using nohup (on server)
       run: |
