@@ -69,7 +69,7 @@ jobs:
 
     - name: Start Flask app using nohup (on server)
       run: |
-        source /home/kelompok2/backend3/venv/bin/activate
+        # source /home/kelompok2/backend3/venv/bin/activate
         echo "Starting Flask app on server..."
         nohup python /home/kelompok2/backend3/run.py > /home/kelompok2/backend3/flask.log 2>&1 &
         curl http://192.168.23.50:5000
