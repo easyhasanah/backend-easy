@@ -14,16 +14,16 @@ jobs:
     - name: Checkout source code
       uses: actions/checkout@v4
 
-    - name: Set up Python 3.x (di runner - mungkin tidak terlalu diperlukan untuk deployment server ini)
+    - name: Set up Python 3.x (di runner)
       uses: actions/setup-python@v5
       with:
         python-version: "3.x"
 
-    - name: Install dependencies (di runner - untuk keperluan workflow)
+    - name: Install dependencies (di runner)
       run: |
-        echo "Installing dependencies in runner (untuk workflow internal)..."
+        echo "Installing dependencies in runner..."
         python -m pip install --upgrade pip
-        pip install -r requirements.txt # Mungkin diperlukan untuk langkah workflow selanjutnya
+        pip install -r requirements.txt
         whoami
 
     - name: Run Flask app (di runner - untuk testing sederhana)
@@ -31,28 +31,21 @@ jobs:
         echo "Running Flask app in runner (for basic testing)..."
         python run.py &
         sleep 5
-        curl http://192.168.23.50:5000 || true # Tambahkan || true agar langkah tidak gagal jika curl gagal
-        PROCESS_ID=$(pgrep -f "python run.py")
-        if [ -n "$PROCESS_ID" ]; then
-          echo "Flask app process is running (PID: $PROCESS_ID)"
-        else
-          echo "Flask app process is not running"
-          # exit 1 # Jangan di exit jika ini hanya testing
-        fi
+        curl http://192.168.23.50:5000 || true
         pkill -f run.py || true
 
     - name: Stop existing Flask process on server
       run: |
         echo "Stopping existing Flask process on server (if any)..."
         pkill -f "python3 /home/kelompok2/backend3/run.py" || true
-        sleep 5 # Beri waktu sebentar untuk proses benar-benar berhenti
+        sleep 5
 
     - name: Adjust directory permissions
       run: |
         echo "Adjusting permissions for /home/kelompok2/backend3/..."
         ls -ld /home/kelompok2/backend3/
-        sudo chown -R kelompok2:kelompok2 /home/kelompok2/backend3/ # Gunakan sudo jika perlu
-        sudo chmod -R 755 /home/kelompok2/backend3/ # Gunakan sudo jika perlu
+        sudo chown -R kelompok2:kelompok2 /home/kelompok2/backend3/
+        sudo chmod -R 755 /home/kelompok2/backend3/
 
     - name: Deploy to production directory
       run: |
@@ -61,19 +54,29 @@ jobs:
         sleep 2
         cp -r . /home/kelompok2/backend3/
 
-    - name: Set up virtual environment on server
+    - name: Set up and install dependencies on server
       run: |
-        echo "Setting up virtual environment on server..."
+        echo "Setting up and installing dependencies on server (in venv)..."
+        # Periksa apakah venv sudah ada, jika tidak, buat
         if [ ! -d "/home/kelompok2/backend3/venv" ]; then
+          echo "Creating virtual environment..."
           python3 -m venv /home/kelompok2/backend3/venv
+          if [ -d "/home/kelompok2/backend3/venv/bin" ]; then
+            echo "Virtual environment created successfully."
+            ls -la /home/kelompok2/backend3/venv/bin/activate
+          else
+            echo "Error creating virtual environment."
+            exit 1
+          fi
         else
           echo "Virtual environment already exists."
+          ls -la /home/kelompok2/backend3/venv/bin/activate
         fi
 
-    - name: Install dependencies (on server)
-      run: |
-        echo "Installing dependencies on server (in venv)..."
+        # Aktifkan dan instal dependensi
+        echo "Activating virtual environment..."
         source /home/kelompok2/backend3/venv/bin/activate
+        echo "Installing dependencies..."
         pip install --upgrade pip
         pip install -r /home/kelompok2/backend3/requirements.txt
 
