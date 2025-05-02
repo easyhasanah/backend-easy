@@ -37,62 +37,62 @@ jobs:
     - name: Stop existing Flask process on server
       run: |
         echo "Stopping existing Flask process on server (if any)..."
-        pkill -f "python3 /home/kelompok2/backend3/run.py" || true
+        pkill -f "python3 /home/kelompok2/backend4/run.py" || true
         sleep 5
 
     - name: Adjust directory permissions
       run: |
-        echo "Adjusting permissions for /home/kelompok2/backend3/..."
-        ls -ld /home/kelompok2/backend3/
-        sudo chown -R kelompok2:kelompok2 /home/kelompok2/backend3/
-        sudo chmod -R 755 /home/kelompok2/backend3/
+        echo "Adjusting permissions for /home/kelompok2/backend4/..."
+        ls -ld /home/kelompok2/backend4/
+        sudo chown -R kelompok2:kelompok2 /home/kelompok2/backend4/
+        sudo chmod -R 755 /home/kelompok2/backend4/
 
     - name: Deploy to production directory
       run: |
         echo "Deploying to production directory..."
-        rm -rf /home/kelompok2/backend3/*
+        rm -rf /home/kelompok2/backend4/*
         sleep 2
-        cp -r . /home/kelompok2/backend3/
+        cp -r . /home/kelompok2/backend4/
 
     - name: Set up and install dependencies on server
       run: |
         echo "Setting up and installing dependencies on server (in venv)..."
         # Hapus direktori venv jika ada
-        if [ -d "/home/kelompok2/backend3/venv" ]; then
+        if [ -d "/home/kelompok2/backend4/venv" ]; then
           echo "Deleting existing virtual environment..."
-          rm -rf /home/kelompok2/backend3/venv
+          rm -rf /home/kelompok2/backend4/venv
         fi
 
         # Buat virtual environment
         echo "Creating virtual environment..."
-        python3 -m venv /home/kelompok2/backend3/venv
-        if [ -d "/home/kelompok2/backend3/venv/bin/activate" ]; then
+        python3 -m venv /home/kelompok2/backend4/venv
+        if [ -d "/home/kelompok2/backend4/venv/bin/activate" ]; then
           echo "Virtual environment created successfully."
-          ls -la /home/kelompok2/backend3/venv/bin/activate
+          ls -la /home/kelompok2/backend4/venv/bin/activate
         else
           echo "Error creating virtual environment - activate file not found."
-          ls -la /home/kelompok2/backend3/venv/bin
+          ls -la /home/kelompok2/backend4/venv/bin
           exit 1
         fi
 
         # Aktifkan dan instal dependensi
         echo "Activating virtual environment..."
-        source /home/kelompok2/backend3/venv/bin/activate
+        source /home/kelompok2/backend4/venv/bin/activate
         echo "Installing dependencies..."
         pip install --upgrade pip
-        pip install -r /home/kelompok2/backend3/requirements.txt
+        pip install -r /home/kelompok2/backend4/requirements.txt
 
     - name: Start Flask app using nohup (on server)
       run: |
         echo "Starting Flask app on server (in venv)..."
-        source /home/kelompok2/backend3/venv/bin/activate
-        nohup python /home/kelompok2/backend3/run.py > /home/kelompok2/backend3/flask.log 2>&1 &
+        source /home/kelompok2/backend4/venv/bin/activate
+        nohup python /home/kelompok2/backend4/run.py > /home/kelompok2/backend4/flask.log 2>&1 &
         sleep 2
         curl http://192.168.23.50:5000 || true
-        echo "Flask app started in the background on /home/kelompok2/backend3/"
+        echo "Flask app started in the background on /home/kelompok2/backend4/"
 
     - name: Show Flask log (optional - jika ada kegagalan)
       if: failure()
       run: |
         echo "--- Flask Log (last 50 lines from server) ---"
-        tail -n 50 /home/kelompok2/backend3/flask.log || true
+        tail -n 50 /home/kelompok2/backend4/flask.log || true
