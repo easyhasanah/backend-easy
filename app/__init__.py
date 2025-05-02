@@ -3,6 +3,8 @@ from .config import Config
 from .models import db
 from .routes.users import users_bp
 from .routes.submissions import submissions_bp
+from .routes.hasanah_cards import hasanahCards_bp
+from .routes.card_categories import cardCategories_bp
 from flask_cors import CORS
 
 def create_app():
@@ -18,5 +20,7 @@ def create_app():
 
     app.register_blueprint(users_bp)
     app.register_blueprint(submissions_bp)
+    app.register_blueprint(hasanahCards_bp)
+    app.register_blueprint(cardCategories_bp)
 
     return app

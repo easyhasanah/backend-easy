@@ -2,6 +2,10 @@ import joblib
 from flask import Blueprint, jsonify, request
 import numpy as np
 import pandas as pd
+from app.models import db, Submissions
+from app.services.jwt import token_required
+import pdfplumber as pr
+import re
 
 submissions_bp = Blueprint('submissions', __name__, url_prefix='/api/submissions')
 
@@ -66,8 +70,36 @@ def build_input_df(data):
 
 
 @submissions_bp.route('/predict', methods=['POST'])
-def predict():
-    payload = request.get_json() or {}
+@token_required
+def predict(user_id):
+    submission = Submissions.query.filter_by(user_id=user_id).first_or_404()
+    payload = {
+        "total_children": submission.total_children,
+        "total_income": submission.income,
+        "applicant_age": submission.applicant_age,
+        "years_of_working": submission.years_of_working,
+        "total_bad_debt": submission.total_bad_debt,
+        "total_good_debt": submission.total_good_debt,
+
+        "income_type_commercial_associate": int(submission.income_type == "Commercial Associate"),
+        "income_type_pensioner": int(submission.income_type == "Pensioner"),
+        "income_type_state_servant": int(submission.income_type == "State Servant"),
+        "income_type_student": int(submission.income_type == "Student"),
+        "income_type_working": int(submission.income_type == "Working"),
+
+        "family_status_married": int(submission.family_status == "Married"),
+        "family_status_separated": int(submission.family_status == "Separated"),
+        "family_status_single": int(submission.family_status == "Single"),
+        "family_status_widow": int(submission.family_status == "Widow"),
+
+        "housing_type_co_op_apartment": int(submission.house_category == "Co-op Apartment"),
+        "housing_type_house_apartment": int(submission.house_category == "House Apartment"),
+        "housing_type_municipal_apartment": int(submission.house_category == "Municipal Apartment"),
+        "housing_type_office_apartment": int(submission.house_category == "Office Apartment"),
+        "housing_type_rented_apartment": int(submission.house_category == "Rented Apartment"),
+        "housing_type_with_parents": int(submission.house_category == "With Parents"),
+    }
+
     try:
         raw_df = build_input_df(payload)
     except KeyError as e:
@@ -80,14 +112,78 @@ def predict():
     pred = approval_model.predict(X_scaled)[0]
     status = 'DISETUJUI' if pred == 1 else 'DITOLAK'
 
+    submission.status_pengajuan = status
+    db.session.commit()
+
     result = payload.copy()
     result['status_pengajuan'] = status
     return jsonify(result), 201
 
 
+def extract_total_income_from_pdf(file):
+    with pr.open(file) as pdf:
+        page = pdf.pages[0]
+        tables = page.extract_tables()
+        table = tables[0]
+
+        header = table[0]
+        target_column = None
+
+        def clean_to_int(s):
+            return int(re.sub(r'[^0-9]', '', s))
+
+        for idx, col_name in enumerate(header):
+            if 'PENGHASILAN BRUTO' in (col_name or '').upper():
+                target_column = idx
+                break
+
+        if target_column is not None:
+            bruto_values = [row[target_column] for row in table[1:] if row[target_column]]
+            gaji = clean_to_int(bruto_values[1])
+            total_income = gaji * 12
+            return total_income
+        else:
+            raise ValueError("Kolom Jumlah Penghasilan Bruto tidak ditemukan.")
+
 @submissions_bp.route('/predict_category', methods=['POST'])
-def predict_category():
-    payload = request.get_json() or {}
+@token_required
+def predict_category(user_id):
+    file = request.files['file']
+
+    try:
+        total_income = extract_total_income_from_pdf(file)
+    except Exception as e:
+        return jsonify({'error': f"Failed to extract income from PDF: {str(e)}"}), 500
+
+    # payload = request.get_json() or {}
+    submission = Submissions.query.filter_by(user_id=user_id).first_or_404()
+    payload = {
+        "total_children": submission.total_children,
+        "total_income": total_income,
+        "applicant_age": submission.applicant_age,
+        "years_of_working": submission.years_of_working,
+        "total_bad_debt": submission.total_bad_debt,
+        "total_good_debt": submission.total_good_debt,
+
+        "income_type_commercial_associate": int(submission.income_type == "Commercial Associate"),
+        "income_type_pensioner": int(submission.income_type == "Pensioner"),
+        "income_type_state_servant": int(submission.income_type == "State Servant"),
+        "income_type_student": int(submission.income_type == "Student"),
+        "income_type_working": int(submission.income_type == "Working"),
+
+        "family_status_married": int(submission.family_status == "Married"),
+        "family_status_separated": int(submission.family_status == "Separated"),
+        "family_status_single": int(submission.family_status == "Single"),
+        "family_status_widow": int(submission.family_status == "Widow"),
+
+        "housing_type_co_op_apartment": int(submission.house_category == "Co-op Apartment"),
+        "housing_type_house_apartment": int(submission.house_category == "House Apartment"),
+        "housing_type_municipal_apartment": int(submission.house_category == "Municipal Apartment"),
+        "housing_type_office_apartment": int(submission.house_category == "Office Apartment"),
+        "housing_type_rented_apartment": int(submission.house_category == "Rented Apartment"),
+        "housing_type_with_parents": int(submission.house_category == "With Parents"),
+    }
+
     try:
         raw_df = build_input_df(payload)
     except KeyError as e:
@@ -114,4 +210,15 @@ def predict_category():
     result = payload.copy()
     result['status_pengajuan'] = status
     result['credit_card_category'] = int(cat_pred)
+
+    submission.status_pengajuan = status
+    submission.income = total_income
+    db.session.commit()
+
     return jsonify(result), 201
+
+@submissions_bp.route('/', methods=['GET'])
+@token_required
+def get_submissions(user_id):
+    submission = Submissions.query.filter_by(user_id=user_id).first_or_404()
+    return jsonify(submission.to_dict())
