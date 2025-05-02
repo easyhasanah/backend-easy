@@ -49,7 +49,7 @@ jobs:
         username: ${{ secrets.SERVER_USERNAME }}  # Ganti dengan nama pengguna di server Anda
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          echo "Deploying to production directory..."
+          echo "Deploying to production directorys..."
           rm -rf /var/www/backend/*
           mkdir -p /var/www/backend/
           rsync -avz --delete . /var/www/backend/
