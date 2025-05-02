@@ -67,8 +67,7 @@ jobs:
     - name: Run Flask app (in runner - for testing)
       run: |
         echo "Running Flask app in runner (for testing)..."
-        python run.py &
-        sleep 10
+        
         PROCESS_ID=$(pgrep -f "python run.py")
         if [ -n "$PROCESS_ID" ]; then
           echo "Flask app process is running (PID: $PROCESS_ID)"
@@ -76,7 +75,7 @@ jobs:
           echo "Flask app process is not running"
           exit 1
         fi
-        pkill -f run.py
+
         
     - name: Show Flask log (optional)
       if: failure()
