@@ -1,0 +1,81 @@
+name: Python ASGI App Deployment
+
+on:
+  push:
+    branches: [ "flask-to-fastapi" ]
+  pull_request:
+    branches: [ "flask-to-fastapi" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: [self-hosted, Linux, X64]
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.x (di runner)
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+
+    - name: Install dependencies (di runner - untuk keperluan workflow)
+      run: |
+        echo "Installing dependencies in runner...."
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        whoami
+
+    - name: Run Uvicorn app (di runner - untuk testing sederhana)
+      run: |
+        echo "Running Uvicorn app in runner (for basic testing)...."
+        uvicorn app:app --host 0.0.0.0 --port 8000 --reload &
+        sleep 5
+        curl http://localhost:8000 || true
+        pkill -f "uvicorn" || true
+
+    - name: Stop existing Uvicorn process on server
+      run: |
+        echo "Stopping existing Uvicorn process on server (if any)..."
+        pkill -f "uvicorn app:app" || true
+        sleep 5
+
+    - name: Adjust directory permissions
+      run: |
+        echo "Adjusting permissions for /home/kelompok2/backend5/..."
+        ls -ld /home/kelompok2/backend5/
+        sudo chown -R kelompok2:kelompok2 /home/kelompok2/backend5/
+        sudo chmod -R 755 /home/kelompok2/backend5/
+
+    - name: Deploy to production directory
+      run: |
+        echo "Deploying to production directory..."
+        rm -rf /home/kelompok2/backend5/*
+        sleep 2
+        cp -r . /home/kelompok2/backend5/
+
+    - name: Set up and install dependencies on server using virtual environment
+      run: |
+        echo "Setting up virtual environment..."
+        python3.12 -m venv /home/kelompok2/backend5/venv
+
+        echo "Activating virtual environment..."
+        source /home/kelompok2/backend5/venv/bin/activate
+
+        echo "Installing dependencies from requirements.txt..."
+        pip install -r /home/kelompok2/backend5/requirements.txt
+
+        echo "Completed"
+
+    - name: Restart Uvicorn service
+      run: |
+        echo "Restarting Uvicorn service..."
+        sudo systemctl restart easy-backend.service
+        sleep 2
+        curl http://192.168.23.50:8000 || true
+
+    - name: Show Uvicorn log (optional - jika ada kegagalan)
+      if: failure()
+      run: |
+        echo "--- Uvicorn Log (last 50 lines from server) ---"
+        tail -n 50 /home/kelompok2/backend5/uvicorn.log || true
