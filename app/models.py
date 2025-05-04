@@ -53,14 +53,17 @@ class HasanahCards(Base):
     card_no = Column(String(255))
     expired_date = Column(Date)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    pin = Column(String(6))
+    pin = Column(String(255))
     card_category_id = Column(Integer, ForeignKey('card_categories.id'))
 
     user = relationship("Users", back_populates="hasanah_cards")
     card_category = relationship("CardCategories", back_populates="cards")
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        data = {c.name: getattr(self, c.name) for c in self._table_.columns}
+        if self.expired_date:
+            data["expired_date"] = self.expired_date.strftime("%m/%y")  # misal: "09/24"
+        return data
 
 
 class CardCategories(Base):
