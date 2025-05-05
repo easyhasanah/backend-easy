@@ -7,14 +7,14 @@ from datetime import datetime
 import random
 import bcrypt
 
-router = APIRouter(prefix="/api/card", tags=["HasanahCards"])
+router = APIRouter(prefix="/api/card", tags=["hasanahCards"])
 
 @router.get("/")
 def get_card(user_id: int = Depends(token_required), db: Session = Depends(get_db)):
-    submission = db.query(HasanahCards).filter_by(user_id=user_id).first()
-    if not submission:
+    hasanahCard = db.query(HasanahCards).filter_by(user_id=user_id).first()
+    if not hasanahCard:
         raise HTTPException(status_code=404, detail="Card not found")
-    return submission.to_dict()
+    return hasanahCard.to_dict()
 
 @router.post("/",  status_code=201)
 async def add_card(

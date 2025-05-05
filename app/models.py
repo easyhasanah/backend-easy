@@ -60,10 +60,7 @@ class HasanahCards(Base):
     card_category = relationship("CardCategories", back_populates="cards")
 
     def to_dict(self):
-        data = {c.name: getattr(self, c.name) for c in self._table_.columns}
-        if self.expired_date:
-            data["expired_date"] = self.expired_date.strftime("%m/%y")  # misal: "09/24"
-        return data
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 class CardCategories(Base):
